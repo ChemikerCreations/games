@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pesca sul Fiume - Chem il Pescatore</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1e272e;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+        #top-bar {
+            width: 100%;
+            max-width: 850px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            background: #2f3640;
+            padding: 6px 12px;
+            border-bottom: 2px solid #353b48;
+            font-size: 14px;
+            font-weight: bold;
+            gap: 6px;
+        }
+        .hud-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-ui {
+            background: #353b48;
+            color: #fff;
+            border: 1px solid #7f8fa6;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-ui:active {
+            background: #718093;
+        }
+        #game-container {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 850px;
+            padding: 4px;
+        }
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            border: 3px solid #dcdde1;
+            border-radius: 8px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+            background-color: #2ecc71;
+        }
+        #mobile-controls {
+            width: 100%;
+            max-width: 850px;
+            height: 120px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 25px 15px 25px;
+        }
+        #joystick-zone {
+            width: 105px;
+            height: 105px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #joystick-knob {
+            width: 44px;
+            height: 44px;
+            background: rgba(241, 196, 15, 0.85);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            position: absolute;
+            pointer-events: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+        #action-btn {
+            width: 95px;
+            height: 95px;
+            background: rgba(230, 126, 34, 0.85);
+            border: 3px solid #fff;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            cursor: pointer;
+        }
+        #action-btn:active, #action-btn.active {
+            background: rgba(211, 84, 0, 1);
+            transform: scale(0.94);
+        }
+        /* Modale Classifica & Nome */
+        #modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+        #modal-box {
+            background: #2f3640;
+            border: 2px solid #f1c40f;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            padding: 18px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        #modal-box h2 {
+            margin: 0 0 10px 0;
+            color: #f1c40f;
+            font-size: 20px;
+        }
+        .name-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .name-row input {
+            flex: 1;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #7f8fa6;
+            background: #1e272e;
+            color: #fff;
+            font-size: 14px;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+        #leaderboard-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 14px 0;
+            max-height: 220px;
+            overflow-y: auto;
+            text-align: left;
+            background: #1e272e;
+            border-radius: 8px;
+            padding: 8px;
+        }
+        #leaderboard-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 8px;
+            border-bottom: 1px solid #2f3640;
+            font-size: 14px;
+        }
+        #leaderboard-list li:last-child {
+            border-bottom: none;
+        }
+        .rank-1 { color: #f1c40f; font-weight: bold; }
+        .rank-2 { color: #dcdde1; font-weight: bold; }
+        .rank-3 { color: #e67e22; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="top-bar">
+        <div class="hud-group">
+            <button class="btn-ui" id="player-btn" title="Cambia nome pescatore">🎣 <span id="player-name-display">Chem il pescatore</span></button>
+            <span>Punti: <span id="score">0</span></span>
+            <span style="color:#f1c40f;">Record: <span id="high-score">0</span></span>
+        </div>
+        <div class="hud-group">
+            <span>Liv: <span id="level">1</span></span>
+            <span id="lives">❤️❤️❤️</span>
+            <button class="btn-ui" id="rank-btn">🏆 Classifica</button>
+            <button class="btn-ui" id="sound-btn">🔊</button>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="480"></canvas>
+    </div>
+
+    <div id="mobile-controls">
+        <div id="joystick-zone">
+            <div id="joystick-knob"></div>
+        </div>
+        <div style="text-align:center; font-size:12px; color:#bdc3c7;">
+            PC: WASD / Frecce + SPAZIO<br>
+            Lancia la lenza e riempi il cestino!
+        </div>
+        <div id="action-btn">
+            <span style="font-size:24px;">🪝</span>
+            <span>LENZA</span>
+        </div>
+    </div>
+
+    <!-- Finestra Classifica / Nome -->
+    <div id="modal-overlay">
+        <div id="modal-box">
+            <h2>🏆 Classifica Pescatori</h2>
+            <div class="name-row">
+                <input type="text" id="player-input" maxlength="22" placeholder="Nome pescatore...">
+                <button class="btn-ui" id="save-name-btn" style="background:#27ae60; border-color:#2ecc71;">Salva</button>
+            </div>
+            <ul id="leaderboard-list"></ul>
+            <button class="btn-ui" id="close-modal-btn" style="width:100%; padding:8px; background:#e74c3c; border-color:#c0392b;">Chiudi e Gioca</button>
+        </div>
+    </div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// --- AUDIO WEB API ---
+let audioCtx = null;
+let soundEnabled = true;
+
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+    }
+}
+
+function playSound(type) {
+    if (!soundEnabled || !audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (type === "cast") {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(180, now + 0.16);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
+        osc.start(now);
+        osc.stop(now + 0.16);
+    } else if (type === "catch") {
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(380, now);
+        osc.frequency.setValueAtTime(580, now + 0.08);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+        osc.start(now);
+        osc.stop(now + 0.22);
+    } else if (type === "gold") {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(523, now);
+        osc.frequency.setValueAtTime(659, now + 0.07);
+        osc.frequency.setValueAtTime(784, now + 0.14);
+        osc.frequency.setValueAtTime(1046, now + 0.21);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.35);
+    } else if (type === "frog") {
+        osc.type = "square";
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(480, now + 0.12);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+        osc.start(now);
+        osc.stop(now + 0.18);
+    } else if (type === "bear") {
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(130, now);
+        osc.frequency.exponentialRampToValueAtTime(55, now + 0.35);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.35);
+    } else if (type === "level") {
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.setValueAtTime(554, now + 0.1);
+        osc.frequency.setValueAtTime(659, now + 0.2);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.35);
+    }
+}
+
+document.getElementById("sound-btn").addEventListener("click", () => {
+    initAudio();
+    soundEnabled = !soundEnabled;
+    document.getElementById("sound-btn").innerText = soundEnabled ? "🔊" : "🔇";
+});
+
+// --- MEMORIA & CLASSIFICA ---
+const STORAGE_NAME_KEY = "chem_fisher_name";
+const STORAGE_SCORES_KEY = "chem_fisher_leaderboard";
+
+let playerName = localStorage.getItem(STORAGE_NAME_KEY) || "Chem il pescatore";
+let leaderboard = [];
+
+try {
+    leaderboard = JSON.parse(localStorage.getItem(STORAGE_SCORES_KEY)) || [];
+} catch (e) {
+    leaderboard = [];
+}
+
+if (leaderboard.length === 0) {
+    leaderboard = [{ name: "Chem il pescatore", score: 0 }];
+    localStorage.setItem(STORAGE_SCORES_KEY, JSON.stringify(leaderboard));
+}
+
+function getHighScore() {
+    if (leaderboard.length === 0) return 0;
+    return Math.max(...leaderboard.map(item => item.score));
+}
+
+function saveScoreToLeaderboard(name, newScore) {
+    if (newScore <= 0) return;
+    const cleanName = name.trim() || "Chem il pescatore";
+    const existing = leaderboard.find(item => item.name.toLowerCase() === cleanName.toLowerCase());
+    if (existing) {
+        if (newScore > existing.score) existing.score = newScore;
+    } else {
+        leaderboard.push({ name: cleanName, score: newScore });
+    }
+    leaderboard.sort((a, b) => b.score - a.score);
+    leaderboard = leaderboard.slice(0, 10);
+    localStorage.setItem(STORAGE_SCORES_KEY, JSON.stringify(leaderboard));
+    updateHUD();
+}
+
+function renderLeaderboard() {
+    const list = document.getElementById("leaderboard-list");
+    list.innerHTML = "";
+    leaderboard.forEach((entry, idx) => {
+        const li = document.createElement("li");
+        if (idx === 0) li.className = "rank-1";
+        else if (idx === 1) li.className = "rank-2";
+        else if (idx === 2) li.className = "rank-3";
+        li.innerHTML = `<span>#${idx + 1} ${entry.name}</span><span>${entry.score} pt</span>`;
+        list.appendChild(li);
+    });
+}
+
+const modalOverlay = document.getElementById("modal-overlay");
+const playerInput = document.getElementById("player-input");
+
+function openModal() {
+    playerInput.value = playerName;
+    renderLeaderboard();
+    modalOverlay.style.display = "flex";
+}
+
+document.getElementById("player-btn").addEventListener("click", openModal);
+document.getElementById("rank-btn").addEventListener("click", openModal);
+document.getElementById("close-modal-btn").addEventListener("click", () => {
+    modalOverlay.style.display = "none";
+});
+document.getElementById("save-name-btn").addEventListener("click", () => {
+    const val = playerInput.value.trim();
+    if (val) {
+        playerName = val;
+        localStorage.setItem(STORAGE_NAME_KEY, playerName);
+        document.getElementById("player-name-display").innerText = playerName;
+    }
+    renderLeaderboard();
+});
+
+document.getElementById("player-name-display").innerText = playerName;
+
+// --- STATO DEL GIOCO ---
+let score = 0;
+let lives = 3;
+let level = 1;
+let gameOver = false;
+let gameStarted = false;
+
+// Fiume e Ponti
+const riverTop = 135;
+const riverBottom = 345;
+
+// Due ponti: uno stretto a sinistra, uno più largo a destra
+const bridges = [
+    { x: 210, width: 52 },  // Ponte stretto
+    { x: 560, width: 82 }   // Ponte largo
+];
+
+// Cestino dei pesci sulla sponda superiore destra
+const basket = {
+    x: 735,
+    y: 62,
+    width: 64,
+    height: 44
+};
+
+// Giocatore (Chem il pescatore)
+const player = {
+    x: 400,
+    y: 85,
+    radius: 18,
+    speed: 4.2,
+    aimX: 0,
+    aimY: 1,
+    walkAnim: 0,
+    invulnerable: 0
+};
+
+// Lenza da pesca (stato del lancio)
+const line = {
+    state: "idle", // "idle", "casting", "reeling"
+    hookX: 0,
+    hookY: 0,
+    targetX: 0,
+    targetY: 0,
+    maxDist: 145,
+    speed: 11,
+    caughtFish: null
+};
+
+// Entità
+let fishes = [];
+let flyingFishes = []; // Pesci che volano verso il cestino!
+let basketFishes = []; // Pesci accumulati dentro il cestino
+let bears = [];
+let frogs = [];
+let particles = [];
+let floatingTexts = [];
+let bearSpawnTimer = 0;
+let frogSpawnTimer = 150;
+
+// --- INPUT TASTIERA & JOYSTICK ---
+const keys = {};
+window.addEventListener("keydown", (e) => {
+    if (modalOverlay.style.display === "flex") return;
+    keys[e.code] = true;
+    if (e.code === "Space") {
+        e.preventDefault();
+        initAudio();
+        handleAction();
+    }
+});
+window.addEventListener("keyup", (e) => {
+    keys[e.code] = false;
+});
+
+// Joystick virtuale
+const joyZone = document.getElementById("joystick-zone");
+const joyKnob = document.getElementById("joystick-knob");
+let joyActive = false;
+let joyTouchId = null;
+let joyVec = { x: 0, y: 0 };
+
+function updateJoystick(clientX, clientY) {
+    const rect = joyZone.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const maxRadius = rect.width / 2 - 18;
+
+    let dx = clientX - centerX;
+    let dy = clientY - centerY;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist > maxRadius) {
+        dx = (dx / dist) * maxRadius;
+        dy = (dy / dist) * maxRadius;
+    }
+
+    joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+    joyVec.x = dx / maxRadius;
+    joyVec.y = dy / maxRadius;
+}
+
+joyZone.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    initAudio();
+    const t = e.changedTouches[0];
+    joyActive = true;
+    joyTouchId = t.identifier;
+    updateJoystick(t.clientX, t.clientY);
+}, { passive: false });
+
+window.addEventListener("touchmove", (e) => {
+    if (!joyActive) return;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (t.identifier === joyTouchId) {
+            updateJoystick(t.clientX, t.clientY);
+        }
+    }
+}, { passive: false });
+
+window.addEventListener("touchend", (e) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joyTouchId) {
+            joyActive = false;
+            joyTouchId = null;
+            joyVec = { x: 0, y: 0 };
+            joyKnob.style.transform = `translate(0px, 0px)`;
+        }
+    }
+});
+
+// Pulsante Lenza Touch
+const actionBtn = document.getElementById("action-btn");
+actionBtn.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    initAudio();
+    actionBtn.classList.add("active");
+    handleAction();
+}, { passive: false });
+actionBtn.addEventListener("touchend", () => actionBtn.classList.remove("active"));
+actionBtn.addEventListener("mousedown", () => { initAudio(); handleAction(); });
+
+canvas.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    initAudio();
+    if (!gameStarted) startGame();
+    else if (gameOver) resetGame();
+}, { passive: false });
+
+canvas.addEventListener("click", () => {
+    initAudio();
+    if (!gameStarted) startGame();
+    else if (gameOver) resetGame();
+});
+
+function handleAction() {
+    if (!gameStarted) {
+        startGame();
+        return;
+    }
+    if (gameOver) {
+        resetGame();
+        return;
+    }
+    if (line.state === "idle") {
+        castLine();
+    }
+}
+
+function startGame() {
+    gameStarted = true;
+    resetGame();
+}
+
+function resetGame() {
+    score = 0;
+    lives = 3;
+    level = 1;
+    gameOver = false;
+    fishes = [];
+    flyingFishes = [];
+    basketFishes = [];
+    bears = [];
+    frogs = [];
+    particles = [];
+    floatingTexts = [];
+    player.x = 400;
+    player.y = 85;
+    player.aimX = 0;
+    player.aimY = 1;
+    player.invulnerable = 45;
+    line.state = "idle";
+    line.caughtFish = null;
+    bearSpawnTimer = 60;
+    frogSpawnTimer = 180;
+    spawnBear();
+    spawnBear();
+    updateHUD();
+}
+
+function updateHUD() {
+    document.getElementById("score").innerText = score;
+    document.getElementById("high-score").innerText = Math.max(score, getHighScore());
+    document.getElementById("level").innerText = level;
+    document.getElementById("lives").innerText = "❤️".repeat(Math.max(0, lives));
+}
+
+// --- LOGICA PONTE ---
+function isOnBridge(x, margin = 0) {
+    for (let b of bridges) {
+        if (x >= b.x - b.width / 2 + margin && x <= b.x + b.width / 2 - margin) {
+            return b;
+        }
+    }
+    return null;
+}
+
+function isUnderBridge(x) {
+    for (let b of bridges) {
+        if (x >= b.x - b.width / 2 && x <= b.x + b.width / 2) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// --- LANCIO LENZA ---
+function castLine() {
+    playSound("cast");
+    line.state = "casting";
+    // Se il pescatore è sulla sponda nord, lancia in giù; se è sulla sponda sud, lancia in su
+    // Se è sul ponte, lancia nella direzione in cui guarda (o verso destra/sinistra nel fiume)
+    let dirX = player.aimX;
+    let dirY = player.aimY;
+
+    if (player.y < riverTop) {
+        dirX = player.aimX * 0.45;
+        dirY = 1;
+    } else if (player.y > riverBottom) {
+        dirX = player.aimX * 0.45;
+        dirY = -1;
+    } else {
+        // Sul ponte: lancia di lato nell'acqua se non guarda già di lato
+        if (Math.abs(dirX) < 0.3) dirX = 1;
+        dirY = 0;
+    }
+
+    const len = Math.hypot(dirX, dirY) || 1;
+    dirX /= len;
+    dirY /= len;
+
+    const rodTip = getRodTip();
+    line.hookX = rodTip.x;
+    line.hookY = rodTip.y;
+    line.targetX = rodTip.x + dirX * line.maxDist;
+    line.targetY = rodTip.y + dirY * line.maxDist;
+
+    // Mantieni l'amo nei bordi dello schermo
+    line.targetX = Math.max(20, Math.min(canvas.width - 20, line.targetX));
+    line.targetY = Math.max(20, Math.min(canvas.height - 20, line.targetY));
+}
+
+function getRodTip() {
+    // Punta della canna da pesca tenuta in mano dal pescatore
+    const side = player.aimX < -0.2 ? -1 : 1;
+    return {
+        x: player.x + side * 22,
+        y: player.y - 14
+    };
+}
+
+// --- SPAWN ENTITÀ ---
+function spawnFish() {
+    const chance = 0.022 + level * 0.004;
+    if (Math.random() < chance && fishes.length < 12) {
+        const fromLeft = Math.random() < 0.5;
+        const isGolden = Math.random() < 0.18;
+        const yPos = riverTop + 26 + Math.random() * (riverBottom - riverTop - 52);
+        const speed = (1.5 + Math.random() * 1.8 + level * 0.18) * (fromLeft ? 1 : -1);
+
+        fishes.push({
+            x: fromLeft ? -25 : canvas.width + 25,
+            y: yPos,
+            speed: speed,
+            size: isGolden ? 13 : 17,
+            color: isGolden ? "#f1c40f" : "#e67e22",
+            points: isGolden ? 30 : 10,
+            isGolden: isGolden,
+            wobble: Math.random() * Math.PI * 2
+        });
+    }
+}
+
+function spawnBear() {
+    const isTop = Math.random() < 0.5;
+    const fromLeft = Math.random() < 0.5;
+    bears.push({
+        x: fromLeft ? 28 : canvas.width - 28,
+        y: isTop ? 65 : 415,
+        speed: 1.9 + Math.min(1.6, level * 0.15),
+        dirX: fromLeft ? 1 : -1,
+        bank: isTop ? "top" : "bottom",
+        crossingBridge: null,
+        targetBank: null,
+        size: 22
+    });
+}
+
+function spawnFrog() {
+    const fromLeft = Math.random() < 0.5;
+    const yPos = 45 + Math.random() * (canvas.height - 90);
+    frogs.push({
+        x: fromLeft ? -15 : canvas.width + 15,
+        y: yPos,
+        dirX: fromLeft ? 1 : -1,
+        vy: (Math.random() - 0.5) * 1.2,
+        jumpTimer: 0,
+        jumpPhase: 0, // > 0 quando sta saltando in aria
+        size: 13
+    });
+}
+
+function addFloatingText(x, y, text, color) {
+    floatingTexts.push({ x, y, text, color, life: 45 });
+}
+
+function createParticles(x, y, color, count = 10) {
+    for (let i = 0; i < count; i++) {
+        particles.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 5,
+            vy: (Math.random() - 0.5) * 5,
+            life: 24,
+            color
+        });
+    }
+}
+
+// --- AGGIORNAMENTO LOGICA ---
+function update() {
+    if (!gameStarted || gameOver) return;
+
+    // Livello
+    const newLevel = Math.floor(score / 100) + 1;
+    if (newLevel > level) {
+        level = newLevel;
+        playSound("level");
+        addFloatingText(player.x, player.y - 25, "LIVELLO " + level + "!", "#f1c40f");
+        updateHUD();
+    }
+
+    // Rigenerazione orsi se ce ne sono pochi (dato che scompaiono allo scontro!)
+    bearSpawnTimer--;
+    const maxBears = Math.min(4, 1 + Math.floor(level / 2));
+    if (bears.length < maxBears && bearSpawnTimer <= 0) {
+        spawnBear();
+        bearSpawnTimer = 160;
+    }
+
+    // Spawn rane
+    frogSpawnTimer--;
+    if (frogSpawnTimer <= 0 && frogs.length < 2) {
+        spawnFrog();
+        frogSpawnTimer = 260 + Math.floor(Math.random() * 140);
+    }
+
+    // Input movimento giocatore
+    let vx = 0;
+    let vy = 0;
+    if (keys["ArrowUp"] || keys["KeyW"]) vy -= 1;
+    if (keys["ArrowDown"] || keys["KeyS"]) vy += 1;
+    if (keys["ArrowLeft"] || keys["KeyA"]) vx -= 1;
+    if (keys["ArrowRight"] || keys["KeyD"]) vx += 1;
+
+    if (joyActive) {
+        vx = joyVec.x;
+        vy = joyVec.y;
+    } else if (vx !== 0 || vy !== 0) {
+        const len = Math.hypot(vx, vy);
+        vx /= len;
+        vy /= len;
+    }
+
+    if (Math.hypot(vx, vy) > 0.1) {
+        player.aimX = vx;
+        player.aimY = vy;
+        player.walkAnim += 0.25;
+    }
+
+    // Movimento con controllo sponde e ponti
+    let nextX = player.x + vx * player.speed;
+    let nextY = player.y + vy * player.speed;
+
+    nextX = Math.max(20, Math.min(canvas.width - 20, nextX));
+    nextY = Math.max(24, Math.min(canvas.height - 24, nextY));
+
+    const currentlyOnBridge = isOnBridge(player.x, 4);
+    const nextOnBridge = isOnBridge(nextX, 4);
+
+    // Controllo X: se è già dentro la fascia del fiume, non può uscire lateralmente dal ponte in acqua
+    if (player.y > riverTop - 6 && player.y < riverBottom + 6) {
+        if (nextOnBridge) {
+            player.x = nextX;
+        }
+    } else {
+        player.x = nextX;
+    }
+
+    // Controllo Y: può entrare nella fascia del fiume solo se si trova su uno dei due ponti
+    if (nextY > riverTop - 6 && nextY < riverBottom + 6) {
+        if (isOnBridge(player.x, 4)) {
+            player.y = nextY;
+        } else {
+            if (player.y <= riverTop - 6) player.y = riverTop - 6;
+            if (player.y >= riverBottom + 6) player.y = riverBottom + 6;
+        }
+    } else {
+        player.y = nextY;
+    }
+
+    if (player.invulnerable > 0) player.invulnerable--;
+
+    // --- AGGIORNAMENTO LENZA ---
+    const rodTip = getRodTip();
+    if (line.state === "casting") {
+        const dx = line.targetX - line.hookX;
+        const dy = line.targetY - line.hookY;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist <= line.speed) {
+            line.hookX = line.targetX;
+            line.hookY = line.targetY;
+            line.state = "reeling";
+        } else {
+            line.hookX += (dx / dist) * line.speed;
+            line.hookY += (dy / dist) * line.speed;
+        }
+
+        // Controlla se l'amo aggancia un pesce (non sotto il ponte)
+        if (!isUnderBridge(line.hookX)) {
+            for (let i = fishes.length - 1; i >= 0; i--) {
+                const f = fishes[i];
+                if (Math.hypot(f.x - line.hookX, f.y - line.hookY) < f.size + 14) {
+                    line.caughtFish = f;
+                    fishes.splice(i, 1);
+                    line.state = "reeling";
+                    break;
+                }
+            }
+        }
+    } else if (line.state === "reeling") {
+        const dx = rodTip.x - line.hookX;
+        const dy = rodTip.y - line.hookY;
+        const dist = Math.hypot(dx, dy);
+
+        // Anche durante il ritiro l'amo può agganciare un pesce se è ancora vuoto
+        if (!line.caughtFish && !isUnderBridge(line.hookX)) {
+            for (let i = fishes.length - 1; i >= 0; i--) {
+                const f = fishes[i];
+                if (Math.hypot(f.x - line.hookX, f.y - line.hookY) < f.size + 14) {
+                    line.caughtFish = f;
+                    fishes.splice(i, 1);
+                    break;
+                }
+            }
+        }
+
+        if (dist <= line.speed + 4) {
+            line.state = "idle";
+            if (line.caughtFish) {
+                // Il pesce agganciato viene lanciato verso il cestino!
+                const cf = line.caughtFish;
+                playSound(cf.isGolden ? "gold" : "catch");
+                flyingFishes.push({
+                    startX: rodTip.x,
+                    startY: rodTip.y,
+                    x: rodTip.x,
+                    y: rodTip.y,
+                    targetX: basket.x,
+                    targetY: basket.y,
+                    progress: 0,
+                    color: cf.color,
+                    size: cf.size,
+                    points: cf.points,
+                    isGolden: cf.isGolden
+                });
+                line.caughtFish = null;
+            }
+        } else {
+            line.hookX += (dx / dist) * (line.speed + 2);
+            line.hookY += (dy / dist) * (line.speed + 2);
+            if (line.caughtFish) {
+                line.caughtFish.x = line.hookX;
+                line.caughtFish.y = line.hookY;
+            }
+        }
+    }
+
+    // --- PESCI CHE VOLANO NEL CESTINO ---
+    for (let i = flyingFishes.length - 1; i >= 0; i--) {
+        const ff = flyingFishes[i];
+        ff.progress += 0.055;
+        const t = Math.min(1, ff.progress);
+        ff.x = ff.startX + (ff.targetX - ff.startX) * t;
+        // Traiettoria ad arco parabolico verso l'alto
+        const arc = Math.sin(t * Math.PI) * 95;
+        ff.y = ff.startY + (ff.targetY - ff.startY) * t - arc;
+
+        if (ff.progress >= 1) {
+            score += ff.points;
+            saveScoreToLeaderboard(playerName, score);
+            updateHUD();
+            createParticles(basket.x, basket.y, ff.color, 8);
+            addFloatingText(basket.x, basket.y - 22, "+" + ff.points, ff.isGolden ? "#f1c40f" : "#ffffff");
+
+            // Aggiungi il pesce visivamente dentro il cestino (fino a 28 pesci visibili)
+            if (basketFishes.length < 28) {
+                basketFishes.push({
+                    offsetX: (Math.random() - 0.5) * 36,
+                    offsetY: -4 - Math.floor(basketFishes.length / 5) * 3,
+                    angle: (Math.random() - 0.5) * 0.8,
+                    color: ff.color
+                });
+            }
+            flyingFishes.splice(i, 1);
+        }
+    }
+
+    // --- AGGIORNAMENTO PESCI NEL FIUME ---
+    spawnFish();
+    for (let i = fishes.length - 1; i >= 0; i--) {
+        const f = fishes[i];
+        f.x += f.speed;
+        f.wobble += 0.14;
+        f.y += Math.sin(f.wobble) * 0.7;
+        if (f.x < -50 || f.x > canvas.width + 50) {
+            fishes.splice(i, 1);
+        }
+    }
+
+    // --- AGGIORNAMENTO RANE (+1 VITA) ---
+    for (let i = frogs.length - 1; i >= 0; i--) {
+        const fr = frogs[i];
+        fr.jumpTimer++;
+        if (fr.jumpTimer % 45 < 20) {
+            // Fase di salto
+            fr.jumpPhase = Math.sin(((fr.jumpTimer % 45) / 20) * Math.PI);
+            fr.x += fr.dirX * 2.8;
+            fr.y += fr.vy;
+            if (fr.y < 30 || fr.y > canvas.height - 30) fr.vy *= -1;
+        } else {
+            fr.jumpPhase = 0;
+        }
+
+        // Cattura rana sia toccandola col pescatore sia colpendola con l'amo della lenza!
+        const hitByPlayer = Math.hypot(player.x - fr.x, player.y - fr.y) < player.radius + fr.size + 4;
+        const hitByHook = line.state !== "idle" && Math.hypot(line.hookX - fr.x, line.hookY - fr.y) < fr.size + 14;
+
+        if (hitByPlayer || hitByHook) {
+            playSound("frog");
+            if (lives < 6) lives++;
+            score += 20;
+            saveScoreToLeaderboard(playerName, score);
+            updateHUD();
+            createParticles(fr.x, fr.y, "#2ecc71", 12);
+            addFloatingText(fr.x, fr.y - 15, "+1 ❤️ (+20)", "#2ecc71");
+            frogs.splice(i, 1);
+            continue;
+        }
+
+        if (fr.x < -40 || fr.x > canvas.width + 40) {
+            frogs.splice(i, 1);
+        }
+    }
+
+    // --- AGGIORNAMENTO ORSI (SCOMPAIONO ALLO SCONTRO) ---
+    for (let i = bears.length - 1; i >= 0; i--) {
+        const b = bears[i];
+
+        if (b.crossingBridge) {
+            // L'orso sta attraversando il ponte
+            const targetY = b.targetBank === "top" ? 65 : 415;
+            const dy = targetY - b.y;
+            b.x += (b.crossingBridge.x - b.x) * 0.1;
+            b.y += Math.sign(dy) * b.speed;
+            if (Math.abs(dy) < 5) {
+                b.y = targetY;
+                b.bank = b.targetBank;
+                b.crossingBridge = null;
+            }
+        } else {
+            // Pattugliamento lungo la sponda
+            b.x += b.dirX * b.speed;
+            if (b.x < 25) { b.x = 25; b.dirX = 1; }
+            if (b.x > canvas.width - 25) { b.x = canvas.width - 25; b.dirX = -1; }
+
+            // Avvicinamento verticale leggero se il pescatore è sulla stessa sponda
+            const playerOnSameBank = (b.bank === "top" && player.y < riverTop) || (b.bank === "bottom" && player.y > riverBottom);
+            if (playerOnSameBank) {
+                const dy = player.y - b.y;
+                if (Math.abs(dy) > 4) b.y += Math.sign(dy) * 1.1;
+                if (b.bank === "top") b.y = Math.max(25, Math.min(riverTop - 22, b.y));
+                else b.y = Math.max(riverBottom + 22, Math.min(canvas.height - 25, b.y));
+            }
+
+            // Controlla se passare su un ponte
+            const bridge = isOnBridge(b.x, 12);
+            if (bridge && Math.random() < 0.025) {
+                b.crossingBridge = bridge;
+                b.targetBank = b.bank === "top" ? "bottom" : "top";
+            }
+        }
+
+        // Collisione con il pescatore -> L'ORSO SCOMPARE!
+        const dist = Math.hypot(player.x - b.x, player.y - b.y);
+        if (dist < player.radius + b.size - 4) {
+            playSound("bear");
+            createParticles(b.x, b.y, "#8D6E63", 18);
+            addFloatingText(b.x, b.y - 15, "ORSO SCACCIATO! -1 ❤️", "#e74c3c");
+            bears.splice(i, 1); // L'orso scompare subito dopo lo scontro!
+            bearSpawnTimer = 140;
+
+            if (player.invulnerable <= 0) {
+                lives--;
+                player.invulnerable = 65;
+                updateHUD();
+                if (lives <= 0) {
+                    gameOver = true;
+                    saveScoreToLeaderboard(playerName, score);
+                }
+            }
+        }
+    }
+
+    // Particelle e testi fluttuanti
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y -= 0.7;
+        ft.life--;
+        if (ft.life <= 0) floatingTexts.splice(i, 1);
+    }
+}
+
+// --- DISEGNO GRAFICO ---
+function drawFishShape(x, y, size, color, facingLeft = false, angle = 0) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    if (facingLeft) ctx.scale(-1, 1);
+
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size, size * 0.58, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(-size + 2, 0);
+    ctx.lineTo(-size - 9, -7);
+    ctx.lineTo(-size - 9, 7);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = "#111";
+    ctx.beginPath();
+    ctx.arc(size * 0.48, -2, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+}
+
+function drawBasket() {
+    ctx.save();
+    ctx.translate(basket.x, basket.y);
+
+    // Ombra cestino
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.beginPath();
+    ctx.ellipse(0, 20, 34, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Manico ad arco in vimini
+    ctx.strokeStyle = "#8e5a2b";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(0, -4, 24, Math.PI, 0);
+    ctx.stroke();
+
+    // Pesci accumulati dentro il cestino (prima del bordo anteriore)
+    for (let bf of basketFishes) {
+        drawFishShape(bf.offsetX, bf.offsetY, 10, bf.color, false, bf.angle);
+    }
+
+    // Corpo intrecciato del cestino (trapezio)
+    ctx.fillStyle = "#b9770e";
+    ctx.strokeStyle = "#6e2c00";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(-30, -4);
+    ctx.lineTo(30, -4);
+    ctx.lineTo(22, 20);
+    ctx.lineTo(-22, 20);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Trama vimini
+    ctx.strokeStyle = "#7e5109";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-27, 4); ctx.lineTo(27, 4);
+    ctx.moveTo(-24, 12); ctx.lineTo(24, 12);
+    ctx.moveTo(-10, -4); ctx.lineTo(-8, 20);
+    ctx.moveTo(0, -4); ctx.lineTo(0, 20);
+    ctx.moveTo(10, -4); ctx.lineTo(8, 20);
+    ctx.stroke();
+
+    // Targhetta contatore pesci/punti sul cestino
+    ctx.fillStyle = "#2c3e50";
+    ctx.fillRect(-24, 22, 48, 15);
+    ctx.fillStyle = "#f1c40f";
+    ctx.font = "bold 11px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(score + " pt", 0, 33);
+
+    ctx.restore();
+}
+
+function drawFisherman() {
+    if (player.invulnerable % 8 >= 4) return;
+
+    ctx.save();
+    ctx.translate(player.x, player.y);
+
+    const facingLeft = player.aimX < -0.2;
+    const step = Math.sin(player.walkAnim) * 4;
+
+    // Ombra a terra
+    ctx.fillStyle = "rgba(0,0,0,0.28)";
+    ctx.beginPath();
+    ctx.ellipse(0, 18, 14, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Stivali / Gambe stilizzate
+    ctx.strokeStyle = "#2c3e50";
+    ctx.lineWidth = 4.5;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-5, 6);
+    ctx.lineTo(-6, 16 + step);
+    ctx.moveTo(5, 6);
+    ctx.lineTo(6, 16 - step);
+    ctx.stroke();
+
+    // Busto (Gilet da pescatore sopra camicia)
+    ctx.fillStyle = "#2980b9"; // Camicia blu
+    ctx.beginPath();
+    ctx.roundRect(-10, -10, 20, 18, 5);
+    ctx.fill();
+
+    ctx.fillStyle = "#d35400"; // Gilet arancione/marrone
+    ctx.fillRect(-9, -9, 7, 16);
+    ctx.fillRect(2, -9, 7, 16);
+
+    // Testa
+    ctx.fillStyle = "#f5cba7";
+    ctx.beginPath();
+    ctx.arc(0, -18, 9, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Occhi orientati
+    ctx.fillStyle = "#111";
+    const eyeOffset = facingLeft ? -3 : 3;
+    ctx.beginPath();
+    ctx.arc(eyeOffset - 2, -18, 1.5, 0, Math.PI * 2);
+    ctx.arc(eyeOffset + 2, -18, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Cappello da pescatore a tesa larga
+    ctx.fillStyle = "#f1c40f";
+    ctx.beginPath();
+    ctx.ellipse(0, -23, 15, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, -24, 8, Math.PI, 0);
+    ctx.fill();
+    ctx.strokeStyle = "#b7950b";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Braccio e Canna da pesca
+    const side = facingLeft ? -1 : 1;
+    ctx.strokeStyle = "#f5cba7";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(side * 8, -5);
+    ctx.lineTo(side * 14, -8);
+    ctx.stroke();
+
+    // Asta della canna da pesca
+    ctx.strokeStyle = "#5d4037";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(side * 11, -3);
+    ctx.lineTo(side * 22, -14);
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+function draw() {
+    // 1. Sponde erbose
+    ctx.fillStyle = "#27ae60";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Ciuffi d'erba decorativi
+    ctx.fillStyle = "#2ecc71";
+    for (let x = 25; x < canvas.width; x += 85) {
+        ctx.fillRect(x, 25, 10, 5);
+        ctx.fillRect(x + 40, 105, 10, 5);
+        ctx.fillRect(x + 15, 385, 10, 5);
+        ctx.fillRect(x + 50, 445, 10, 5);
+    }
+
+    // 2. Fiume
+    ctx.fillStyle = "#2980b9";
+    ctx.fillRect(0, riverTop, canvas.width, riverBottom - riverTop);
+
+    // Onde animate
+    ctx.strokeStyle = "#3498db";
+    ctx.lineWidth = 2.5;
+    const waveOffset = (Date.now() / 22) % 60;
+    for (let y = riverTop + 28; y < riverBottom; y += 42) {
+        for (let x = -60 + waveOffset; x < canvas.width; x += 60) {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + 24, y);
+            ctx.stroke();
+        }
+    }
+
+    // Sponde sabbiose
+    ctx.fillStyle = "#d35400";
+    ctx.fillRect(0, riverTop - 5, canvas.width, 5);
+    ctx.fillRect(0, riverBottom, canvas.width, 5);
+
+    // 3. Pesci nel fiume (disegnati PRIMA dei ponti così passano SOTTO!)
+    for (let f of fishes) {
+        drawFishShape(f.x, f.y, f.size, f.color, f.speed < 0);
+    }
+
+    // 4. Rane che nuotano (se sono nel fiume, sotto i ponti)
+    for (let fr of frogs) {
+        if (fr.y > riverTop && fr.y < riverBottom) {
+            drawFrog(fr);
+        }
+    }
+
+    // 5. Ponti in legno (sopra i pesci)
+    for (let b of bridges) {
+        const left = b.x - b.width / 2;
+        const height = riverBottom - riverTop + 16;
+        const top = riverTop - 8;
+
+        // Tavole
+        ctx.fillStyle = "#8e5a2b";
+        ctx.fillRect(left, top, b.width, height);
+
+        ctx.strokeStyle = "#5d3a1a";
+        ctx.lineWidth = 2;
+        for (let py = top + 8; py < top + height; py += 14) {
+            ctx.beginPath();
+            ctx.moveTo(left, py);
+            ctx.lineTo(left + b.width, py);
+            ctx.stroke();
+        }
+
+        // Corrimano laterali
+        ctx.fillStyle = "#6e421d";
+        ctx.fillRect(left - 3, top, 5, height);
+        ctx.fillRect(left + b.width - 2, top, 5, height);
+    }
+
+    // 6. Cestino dei pesci
+    drawBasket();
+
+    // 7. Rane sulle sponde
+    for (let fr of frogs) {
+        if (fr.y <= riverTop || fr.y >= riverBottom) {
+            drawFrog(fr);
+        }
+    }
+
+    // 8. Orsi
+    for (let b of bears) {
+        ctx.save();
+        ctx.translate(b.x, b.y);
+
+        ctx.fillStyle = "#5D4037";
+        ctx.beginPath();
+        ctx.arc(0, 0, b.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(-14, -14, 7, 0, Math.PI * 2);
+        ctx.arc(14, -14, 7, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#8D6E63";
+        ctx.beginPath();
+        ctx.arc(0, 4, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        ctx.arc(0, 2, 3.5, 0, Math.PI * 2);
+        ctx.arc(-7, -5, 2.5, 0, Math.PI * 2);
+        ctx.arc(7, -5, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    // 9. Pescatore stilizzato (Chem)
+    drawFisherman();
+
+    // 10. Lenza e Amo
+    if (line.state !== "idle") {
+        const tip = getRodTip();
+        ctx.strokeStyle = "#ecf0f1";
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(tip.x, tip.y);
+        ctx.lineTo(line.hookX, line.hookY);
+        ctx.stroke();
+
+        // Galleggiante rosso/bianco
+        ctx.fillStyle = "#e74c3c";
+        ctx.beginPath();
+        ctx.arc(line.hookX, line.hookY, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.arc(line.hookX, line.hookY, 4.5, 0, Math.PI);
+        ctx.fill();
+
+        // Pesce agganciato mentre viene tirato su
+        if (line.caughtFish) {
+            drawFishShape(line.caughtFish.x, line.caughtFish.y, line.caughtFish.size, line.caughtFish.color, false, -Math.PI / 2);
+        }
+    }
+
+    // 11. Pesci che volano nel cestino
+    for (let ff of flyingFishes) {
+        drawFishShape(ff.x, ff.y, ff.size, ff.color, false, ff.progress * Math.PI * 2);
+    }
+
+    // 12. Particelle e Testi fluttuanti
+    for (let p of particles) {
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, 5, 5);
+    }
+    for (let ft of floatingTexts) {
+        ctx.fillStyle = ft.color;
+        ctx.font = "bold 15px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(ft.text, ft.x, ft.y);
+    }
+
+    // Schermata iniziale
+    if (!gameStarted) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.72)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#f1c40f";
+        ctx.textAlign = "center";
+        ctx.font = "bold 32px sans-serif";
+        ctx.fillText("PESCA SUL FIUME", canvas.width / 2, 165);
+        ctx.fillStyle = "#fff";
+        ctx.font = "17px sans-serif";
+        ctx.fillText("Lancia la lenza per agganciare i pesci e riempire il cestino!", canvas.width / 2, 215);
+        ctx.fillText("Attento agli orsi (scompaiono allo scontro, ma tolgono 1 vita).", canvas.width / 2, 248);
+        ctx.fillText("Prendi le rane verdi per guadagnare +1 ❤️!", canvas.width / 2, 281);
+        ctx.fillStyle = "#2ecc71";
+        ctx.font = "bold 22px sans-serif";
+        ctx.fillText("Tocca lo schermo o premi SPAZIO per iniziare", canvas.width / 2, 345);
+    }
+
+    // Schermata Game Over
+    if (gameOver) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.78)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#e74c3c";
+        ctx.textAlign = "center";
+        ctx.font = "bold 42px sans-serif";
+        ctx.fillText("GAME OVER", canvas.width / 2, 185);
+        ctx.fillStyle = "#fff";
+        ctx.font = "22px sans-serif";
+        ctx.fillText(playerName + ": " + score + " punti", canvas.width / 2, 235);
+        ctx.fillStyle = "#f1c40f";
+        ctx.font = "18px sans-serif";
+        ctx.fillText("Record migliore: " + getHighScore() + " punti", canvas.width / 2, 270);
+        ctx.fillStyle = "#2ecc71";
+        ctx.font = "bold 20px sans-serif";
+        ctx.fillText("Tocca o premi SPAZIO per rigiocare", canvas.width / 2, 330);
+    }
+}
+
+function drawFrog(fr) {
+    ctx.save();
+    const jumpHeight = fr.jumpPhase * 12;
+    ctx.translate(fr.x, fr.y);
+
+    // Ombra a terra
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.beginPath();
+    ctx.ellipse(0, 6, 10 - fr.jumpPhase * 3, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Corpo rana sollevato durante il salto
+    ctx.translate(0, -jumpHeight);
+    if (fr.dirX < 0) ctx.scale(-1, 1);
+
+    // Zampe posteriori estese in salto
+    ctx.strokeStyle = "#1e8449";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-6, 3);
+    ctx.lineTo(-12 - fr.jumpPhase * 5, 7 + fr.jumpPhase * 3);
+    ctx.stroke();
+
+    // Corpo verde
+    ctx.fillStyle = "#2ecc71";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 11, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Occhi sporgenti
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(6, -6, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#000";
+    ctx.beginPath();
+    ctx.arc(7, -6, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+updateHUD();
+gameLoop();
+</script>
+</body>
+</html>
